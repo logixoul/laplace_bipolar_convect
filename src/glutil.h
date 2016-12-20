@@ -1,6 +1,6 @@
 #pragma once
 #include "precompiled.h"
-
+#if 0
 extern gl::Texture NO_DEPTH_TEX;
 /*inline gl::Texture maketex(int w, int h, GLint format, GLint internalFormat) {
 	gl::Texture::Format fmt; fmt.setInternalFormat(internalFormat); return gl::Texture(NULL, format, w, h, fmt);
@@ -66,3 +66,4 @@ inline void endRTT()
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0);
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
+#endif

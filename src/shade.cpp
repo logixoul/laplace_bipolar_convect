@@ -17,6 +17,13 @@ void endRTT()
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 }
 
+gl::Texture Shade::run() {
+	auto opts = ShadeOpts().scale(_scaleX, _scaleY);
+	if(_ifmt.exists)
+		opts.ifmt(_ifmt.val);
+	return shade(_texv, _src.c_str(), opts);
+}
+
 string removeEndlines(string s)
 {
 	string s2 = s;
@@ -73,6 +80,7 @@ gl::Texture shade(vector<gl::Texture> texv, const char* fshader_constChar, Shade
 	//cout << "sampler2Ddeclarations: " << sampler2Ddeclarations << endl;
 	string intro =
 		Str()
+		<< "#version 130"
 		<< uniformDeclarations
 		<< "vec3 _out = vec3(0.0);"
 		<< "varying vec2 tc;"
@@ -176,7 +184,7 @@ gl::Texture shade(vector<gl::Texture> texv, const char* fshader_constChar, Shade
 	}
 	gl::Texture::Format fmt;
 	fmt.setInternalFormat(opts._ifmt.exists ? opts._ifmt.val : tex0.getInternalFormat());
-	gl::Texture result(tex0.getWidth() * opts._scale, tex0.getHeight() * opts._scale, fmt);
+	gl::Texture result(tex0.getWidth() * opts._scaleX, tex0.getHeight() * opts._scaleY, fmt);
 	beginRTT(result);
 	
 	gl::pushMatrices();

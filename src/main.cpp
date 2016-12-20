@@ -6,11 +6,13 @@
 #include "stuff.h"
 #include "glutil.h"
 #include "shade.h"
+#include "gpgpu.h"
+#include "gpuBlur2_4.h"
 
 typedef gl::Texture Tex;
 typedef Array2D<float> Image;
 int wsx=800, wsy = 600;
-int scale = 8;
+int scale = 4;
 int sx = wsx / scale;
 int sy = wsy / scale;
 Image img(sx, sy);
@@ -59,6 +61,16 @@ struct SApp : AppBasic {
 	{
 	}
 	
+	template<class T>
+	Array2D<T> gauss3Weak(Array2D<T> src) {
+		auto blurred = gauss3(src);
+		auto blurredWeak = Array2D<T>(src.Size());
+		forxy(blurredWeak) {
+			blurredWeak(p) = lerp(src(p), blurred(p), .3f);
+		}
+		return blurredWeak;
+	}
+
 	void updateApp()
 	{
 		if(pause)
@@ -113,6 +125,7 @@ struct SApp : AppBasic {
 			{
 				Vec2f p = Vec2f(x,y);
 				Vec2f grad = gradients(x, y).safeNormalized();
+				grad = Vec2f(-grad.y, grad.x);;
 				Vec2f grad_a = getBilinear(gradients, p+grad).safeNormalized();
 				grad_a = -Vec2f(-grad_a.y, grad_a.x);
 				Vec2f grad_b = getBilinear(gradients, p-grad).safeNormalized();
@@ -149,7 +162,7 @@ struct SApp : AppBasic {
 		gl::clear(Color(0, 0, 0));
 		updateApp();
 
-		auto imgt=maketex(img,GL_R16F);
+		/*auto imgt=maketex(img,GL_R16F);
 		auto velt=maketex(velocity,GL_RG16F);
 		globaldict["abc3"]=niceExpRangeX(mouseX,1.0,1000000.0);
 		auto imgBigt=shade(list_of(imgt), "void shade(){_out=fetch3();}");
@@ -170,8 +183,72 @@ struct SApp : AppBasic {
 			if(times-i<=3)mergeds.push_back(merged);
 			merged=shade(list_of(merged)(logVelt), sh.c_str());
 		}
-		auto toDraw=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");
-		gl::draw(toDraw, getWindowBounds());
+		auto toDraw=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
+
+		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
+
+		auto tex = maketex(img,GL_RGB16F);
+		//tex = shade2(tex, "vec3 c = fetch3(); _out = c / (c + vec3(1.0));");
+		auto grads = get_gradients_tex(tex);
+		auto tex2 = shade2(tex, grads, envMap,
+			"vec2 grad = fetch2(tex2);"
+			"float img = fetch1(tex);"
+			"vec3 N = normalize(vec3(-grad.x, -grad.y, -1.0));"
+			"vec3 I=-normalize(vec3(tc.x-.5, tc.y-.5, 1.0));"
+			"float eta=1.0/1.3;"
+			"vec3 R=refract(I, N, eta);"
+			"vec3 c = getEnv(R);"
+			//"c = mix(albedo, c, pow(.9, fetch1(tex) * 50.0));" // tmp
+			"R = reflect(I, N);"
+			"float fresnelAmount = getFresnel(I, N);"
+			"if(img > 0.0)"
+			"	c += getEnv(R) * fresnelAmount * 10.0;" // *10.0 to tmp simulate one side of the envmap being brighter than the other
+			"vec3 diffuse = vec3(1.0) * max(dot(R, I), 0.0);"
+			"c += diffuse;"
+			"c += img * vec3(1.0, 0.1, 0.0);"
+			//"c += N * .5 + .5;"
+			//"c += getEnv(vec3(tc.x, tc.y, 0.0));"
+			//"if(fetch1(tex) <= surfTensionThres)"
+			//"	c = vec3(0.0);"
+			"_out = c;",
+			ShadeOpts().ifmt(GL_RGB16F).scale(4.0f),
+			"float PI = 3.14159265358979323846264;\n"
+			"float getFresnel(vec3 I, vec3 N) {"
+			"	float R0 = 0.01;" // maybe is ok. but wikipedia has a way for calculating it.
+			"	float dotted = dot(I, N);"
+			"	return R0 + (1.0-R0) * pow(1.0-dotted, 5.0);"
+			"}"
+			"vec2 latlong(vec3 v) {\n"
+			"v = v.xzy;\n"
+			"v = normalize(v);\n"
+			"float theta = acos(-v.z);\n" // +z is up
+			"\n"
+			"v.y=-v.y;\n"
+			"float phi = atan(v.y, v.x) + PI;\n"
+			//"return vec2(phi / (2.0*PI), theta / (PI/2.0));\n"
+			"return vec2(phi / (2.0*PI), theta / (PI));\n"
+			"}\n"
+			"vec3 w = vec3(.22, .71, .07);"
+		"vec3 getEnv(vec3 v) {\n"
+			"	vec3 c = fetch3(tex3, latlong(v));\n"
+			//"	c = 5.0*pow(c, vec3(2.0));"
+			"	c = pow(c, vec3(2.2));" // gamma correction
+			//"	c=smoothstep(vec3(0.0),vec3(1.0),c);"
+			"	float clum=dot(c, w);"
+			"	c *= pow(clum,1.0);" // make it darker
+			//"	c/=vec3(1.0)-c*.99; c*=1.0;"
+			"	return c;"
+			"}\n"
+			);
+		//tex = shade2(tex, "vec3 c = fetch3(); c *= 3.0; c /= c + 1.0; _out = c;");
+
+		/*auto tex2b = gpuBlur2_4::run_longtail(tex2, 5, 1.0f);
+
+		tex2 = shade2(tex2, tex2b,
+			"_out = fetch3(tex) + fetch3(tex2) * .2;"
+			);*/
+
+		gl::draw(tex2, getWindowBounds());
 	}
 };
 

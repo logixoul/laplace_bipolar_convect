@@ -52,12 +52,12 @@ float smoothstep(float edge0, float edge1, float x)
 	return x*x*(3 - 2*x);
 }
 
-/*
 // Program tested on Microsoft Visual Studio 2008 - Zahid Ghadialy
 // This program shows example of Getting Elapsed Time
 //#include <windows.h>
 #include <MMSystem.h>
 using namespace std;
+#pragma comment(lib, "winmm.lib")
 
 LARGE_INTEGER timerFreq_;
 LARGE_INTEGER counterAtStart_;
@@ -93,4 +93,4 @@ namespace Stopwatch
 		return elapsed;
 	  }
 	}
-}*/
+}

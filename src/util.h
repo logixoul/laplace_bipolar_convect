@@ -117,7 +117,7 @@ struct Array2D
 
 	T& wr(Vec2i const& v) { return (*this)(wrapPoint(v)); }
 	T const& wr(Vec2i const& v) const { return (*this)(wrapPoint(v)); }
-	
+
 	int offsetOf(int x, int y) const { return MemoryLayoutPolicy::offset(*this, x, y); }
 	int offsetOf(ci::Vec2i const& p) const { return MemoryLayoutPolicy::offset(*this, p.x, p.y); }
 	bool contains(int x, int y) const { return x >= 0 && y >= 0 && x < w && y < h; }
@@ -178,7 +178,11 @@ template<class F> float apply(float v, F f)
 }
 
 #define forxy(w, h) for(int i = 0; i < w; i++) for(int j = 0; j < h; j++)
-#define forxy(image) for(Vec2i p(0, 0); p.x < image.w; p.x++) for(p.y = 0; p.y < image.h; p.y++)
+#define forxy(image) \
+	for(Vec2i p(0, 0); p.x < image.w; p.x++) \
+		for(p.y = 0; p.y < image.h; p.y++) \
+			for(bool SOME_LONG_BOOL=true; SOME_LONG_BOOL;) \
+				for(decltype(image(p))& pixel=image(p); SOME_LONG_BOOL; SOME_LONG_BOOL = false)
 
 inline float psin(float a)
 {

@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cfg1.cpp" />
     <ClCompile Include="glutil.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main2.cpp" />
@@ -180,8 +181,11 @@
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cfg1.h" />
     <ClInclude Include="define_winmain.h" />
     <ClInclude Include="glutil.h" />
+    <ClInclude Include="gpgpu.h" />
+    <ClInclude Include="gpuBlur2_4.h" />
     <ClInclude Include="precompiled.h" />
     <ClInclude Include="shade.h" />
     <ClInclude Include="stuff.h" />

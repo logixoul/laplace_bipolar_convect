@@ -8,7 +8,7 @@
 //#include <regex>
 //#include <complex>
 //#include <cinder/gl/Fbo.h>
-//#include <cinder/ImageIo.h>
+#include <cinder/ImageIo.h>
 #include <fftw3.h>
 
 //---------------------------------------
