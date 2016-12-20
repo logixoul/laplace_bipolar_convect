@@ -4,7 +4,6 @@
 #include "util.h"
 #include <numeric>
 #include "stuff.h"
-#include "glutil.h"
 #include "shade.h"
 #include "gpgpu.h"
 #include "gpuBlur2_4.h"
