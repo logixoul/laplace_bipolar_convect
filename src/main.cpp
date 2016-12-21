@@ -41,6 +41,15 @@ struct SApp : AppBasic {
 			pause = !pause;
 		if(e.getChar() == 'r')
 			reset();
+		if(e.getChar() == 'v') {// set velocities to be non-grandfloating
+			auto sum = std::accumulate(velocity.begin(), velocity.end(), velocity(0, 0) * 0.0f);
+			auto avg = sum / (float)img.area;
+			auto desiredAvg = Vec2f::one() * .5f;
+			forxy(velocity)
+			{
+				velocity(p) += desiredAvg - avg;
+			}
+		}
 		keys[e.getChar()] = true;
 	}
 	void keyUp(KeyEvent e)
@@ -110,39 +119,41 @@ struct SApp : AppBasic {
 			velocity=gauss3(velocity);
 			img=gauss3(img);
 		}
-		Array2D<Vec2f> gradients(sx, sy);
-		forxy(gradients)
-		{
-			gradients(p) = gradient_i(img, Vec2f(p));
-			//gradients(p) = Vec2f(-gradients(p).y, gradients(p).x);
-		}
-		float abc = niceExpRangeX(mouseX, .001f, 40000.0f);
-		float abc2 = niceExpRangeY(mouseY, .01f, 4000.0f);
-		//float abc=min(1.0f, mouseX)*5.0f;// sign(mouseX) * exp(-3.0 + 10.0 * min(1.0f, abs(mouseX)));
-		if(keys['o'])
-		for(int x = 0; x < sx; x++)
-		{
-			for(int y = 0; y < sy; y++)
+		for(int i = 0; i < 3; i++) {
+			Array2D<Vec2f> gradients(sx, sy);
+			forxy(gradients)
 			{
-				Vec2f p = Vec2f(x,y);
-				Vec2f grad = gradients(x, y).safeNormalized();
-				grad = Vec2f(-grad.y, grad.x);;
-				Vec2f grad_a = getBilinear(gradients, p+grad).safeNormalized();
-				grad_a = -Vec2f(-grad_a.y, grad_a.x);
-				Vec2f grad_b = getBilinear(gradients, p-grad).safeNormalized();
-				grad_b = Vec2f(-grad_b.y, grad_b.x);
-				Vec2f dir = grad_a + grad_b;
-				dir *= abc;
-				//aaPoint(velocity, p, dir);
-				velocity(x, y) += dir;
+				gradients(p) = gradient_i(img, Vec2f(p));
+				//gradients(p) = Vec2f(-gradients(p).y, gradients(p).x);
 			}
-		}
-		auto laplace = div(gradients);
-		forxy(img) {
-			if(laplace(p) > 0.0f) { // concave
-				velocity(p) += gradients(p).safeNormalized() * abc2;
-			} else {
-				velocity(p) += -gradients(p).safeNormalized() * abc2;
+			float abc = niceExpRangeX(mouseX, .001f, 40000.0f);
+			float abc2 = niceExpRangeY(mouseY, .01f, 4000.0f);
+			//float abc=min(1.0f, mouseX)*5.0f;// sign(mouseX) * exp(-3.0 + 10.0 * min(1.0f, abs(mouseX)));
+			if(keys['o'])
+			for(int x = 0; x < sx; x++)
+			{
+				for(int y = 0; y < sy; y++)
+				{
+					Vec2f p = Vec2f(x,y);
+					Vec2f grad = gradients(x, y).safeNormalized();
+					grad = Vec2f(-grad.y, grad.x);;
+					Vec2f grad_a = getBilinear(gradients, p+grad).safeNormalized();
+					grad_a = -Vec2f(-grad_a.y, grad_a.x);
+					Vec2f grad_b = getBilinear(gradients, p-grad).safeNormalized();
+					grad_b = Vec2f(-grad_b.y, grad_b.x);
+					Vec2f dir = grad_a + grad_b;
+					dir *= abc;
+					//aaPoint(velocity, p, dir);
+					velocity(x, y) += dir;
+				}
+			}
+			auto laplace = div(gradients);
+			forxy(img) {
+				if(laplace(p) > 0.0f) { // concave
+					velocity(p) += gradients(p).safeNormalized() * abc2;
+				} else {
+					velocity(p) += -gradients(p).safeNormalized() * abc2;
+				}
 			}
 		}
 	}
@@ -201,9 +212,9 @@ struct SApp : AppBasic {
 			"vec3 c = getEnv(R);"
 			//"c = mix(albedo, c, pow(.9, fetch1(tex) * 50.0));" // tmp
 			"R = reflect(I, N);"
-			"float fresnelAmount = getFresnel(I, N);"
-			"if(img > 0.0)"
-			"	c += getEnv(R) * fresnelAmount * 10.0;" // *10.0 to tmp simulate one side of the envmap being brighter than the other
+			/*"float fresnelAmount = getFresnel(I, N);"
+			"fresnelAmount = 1.0;"
+			"c += getEnv(R) * fresnelAmount;"*/
 			"vec3 diffuse = vec3(1.0) * max(dot(R, I), 0.0);"
 			"c += diffuse;"
 			"c += img * vec3(1.0, 0.1, 0.0);"
@@ -230,7 +241,7 @@ struct SApp : AppBasic {
 			"return vec2(phi / (2.0*PI), theta / (PI));\n"
 			"}\n"
 			"vec3 w = vec3(.22, .71, .07);"
-		"vec3 getEnv(vec3 v) {\n"
+			"vec3 getEnv(vec3 v) {\n"
 			"	vec3 c = fetch3(tex3, latlong(v));\n"
 			//"	c = 5.0*pow(c, vec3(2.0));"
 			"	c = pow(c, vec3(2.2));" // gamma correction
@@ -241,15 +252,26 @@ struct SApp : AppBasic {
 			"	return c;"
 			"}\n"
 			);
-		//tex = shade2(tex, "vec3 c = fetch3(); c *= 3.0; c /= c + 1.0; _out = c;");
+		//bloom(tex2);
 
-		/*auto tex2b = gpuBlur2_4::run_longtail(tex2, 5, 1.0f);
+		gl::draw(tex2, getWindowBounds());
+	}
+
+	void bloom(gl::Texture& tex2) {
+		auto tex2ForBlur = shade2(tex2,
+			"vec3 c = fetch3();"
+			"vec3 w = vec3(.22, .71, .07);"
+			"float lum = dot(w, c);"
+			"if(lum < 1.0) {"
+			"	c = vec3(0.0);"
+			"}"
+			"_out = c;");
+
+		auto tex2b = gpuBlur2_4::run_longtail(tex2ForBlur, 5, 1.0f);
 
 		tex2 = shade2(tex2, tex2b,
 			"_out = fetch3(tex) + fetch3(tex2) * .2;"
-			);*/
-
-		gl::draw(tex2, getWindowBounds());
+			);
 	}
 };
 
