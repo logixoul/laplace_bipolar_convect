@@ -106,8 +106,10 @@ struct SApp : AppBasic {
 		}
 
 		//std::fill(velocity.begin(), velocity.end(), Vec2f::zero());
-		velocity=gauss3(velocity);
-		img=gauss3(img);
+		for(int i = 0; i < 3; i++) {
+			velocity=gauss3(velocity);
+			img=gauss3(img);
+		}
 		Array2D<Vec2f> gradients(sx, sy);
 		forxy(gradients)
 		{
