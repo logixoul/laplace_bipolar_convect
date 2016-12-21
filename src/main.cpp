@@ -61,6 +61,7 @@ struct SApp : AppBasic {
 		forxy(img)
 		{
 			img(p) = ci::randFloat();
+			velocity(p) = Vec2f::zero();
 		}
 		texNew=maketex(img, GL_R16F);
 	}
@@ -195,12 +196,11 @@ struct SApp : AppBasic {
 			if(times-i<=3)mergeds.push_back(merged);
 			merged=shade(list_of(merged)(logVelt), sh.c_str());
 		}
-		auto toDraw=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
+		auto tex=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
 
 		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
 
-		auto tex = maketex(img,GL_RGB16F);
-		//tex = shade2(tex, "vec3 c = fetch3(); _out = c / (c + vec3(1.0));");
+		auto tex = maketex(img,GL_R16F);
 		auto grads = get_gradients_tex(tex);
 		auto tex2 = shade2(tex, grads, envMap,
 			"vec2 grad = fetch2(tex2);"
