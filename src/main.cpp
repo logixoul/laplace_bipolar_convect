@@ -93,13 +93,8 @@ struct SApp : AppBasic {
 			Vec2f offset = velocity(p);
 			offset = offset.safeNormalized() * std::log(offset.length() + 1.0f);
 			maxOffset=max(maxOffset,offset.length());
-			if(keys['i']){
-				img2(p) = getBilinear(img, Vec2f(p) - offset);
-				vel2(p) = getBilinear(velocity, Vec2f(p) - offset);
-			} else {
-				aaPoint(img2, Vec2f(p) + offset, img(p));
-				aaPoint(vel2, Vec2f(p) + offset, velocity(p));
-			}
+			aaPoint(img2, Vec2f(p) + offset, img(p));
+			aaPoint(vel2, Vec2f(p) + offset, velocity(p));
 		}
 		cout<<"maxoffset"<<maxOffset<<endl;
 		velocity = vel2;
