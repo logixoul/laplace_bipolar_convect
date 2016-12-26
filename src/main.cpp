@@ -102,7 +102,7 @@ struct SApp : AppBasic {
 
 		float sum = std::accumulate(img.begin(), img.end(), 0.0f);
 		float avg = sum / (float)img.area;
-		/*int plustimes=10;
+		/*int plustimes=1;
 		float plusadd=(.5f-avg)*float(img.area)/float(plustimes);
 		for(int i=0;i<plustimes;i++) { int x=ci::randInt(sx); int y=ci::randInt(sy); img(x,y)+=plusadd; }*/
 		forxy(img)
@@ -211,6 +211,7 @@ struct SApp : AppBasic {
 		auto tex=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
 
 		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
+		static auto colorSource = gl::Texture(ci::loadImage("color.png"));
 
 		auto tex = maketex(contrastized,GL_R16F);
 		auto grads = get_gradients_tex(tex);
@@ -229,6 +230,7 @@ struct SApp : AppBasic {
 			"c += getEnv(R) * fresnelAmount;"*/
 			"vec3 diffuse = vec3(1.0) * max(dot(R, I), 0.0);"
 			"c += diffuse;"
+			"img = max(img, 0.0);"
 			"c += img * vec3(1.0, 0.1, 0.0);"
 			//"c += N * .5 + .5;"
 			//"c += getEnv(vec3(tc.x, tc.y, 0.0));"
@@ -259,18 +261,42 @@ struct SApp : AppBasic {
 			"	c = pow(c, vec3(2.2));" // gamma correction
 			//"	c=smoothstep(vec3(0.0),vec3(1.0),c);"
 			"	float clum=dot(c, w);"
-			"	c *= pow(clum,1.0);" // make it darker
+			//"	c *= pow(clum,1.0);" // make it darker
 			//"	c/=vec3(1.0)-c*.99; c*=1.0;"
+			"	c = pow(c, vec3(2.0));"
+			"	c *= 2.0;"
 			"	return c;"
 			"}\n"
 			);
-		//bloom(tex2);
+		tex2=bloom(tex2);
+		tex2 = gammaCorrect(tex2);
 
+		tex2 = shade2(tex2, colorSource,
+			"vec3 c = fetch3();"
+			/*"float clum=dot(c, w);"
+			"c /= clum + 1.0;"
+			"c *= 1.5;"*/
+			"c = min(c, vec3(1.0));"
+			"vec3 colorSrc = fetch3(tex2);"
+			"vec3 cHCL = RGB2HCL(c);"
+			"vec3 colorSrcHCL = RGB2HCL(colorSrc);"
+			"cHCL.x = colorSrcHCL.x;"
+			"c = HCL2RGB(cHCL);"
+			"_out = c;"
+			,
+			ShadeOpts(),
+			getShader("hcl_lib.fs")
+			+ "vec3 w = vec3(.22, .71, .07);");
 		gl::draw(tex2, getWindowBounds());
 	}
 
-	void bloom(gl::Texture& tex2) {
-		auto tex2ForBlur = shade2(tex2,
+	gl::Texture gammaCorrect(gl::Texture& tex) {
+		auto texG = shade2(tex, "vec3 c = fetch3(); c = max(c, vec3(0.0)); c = pow(c, vec3(1.0/2.2)); _out = c;");
+		return texG;
+	}
+
+	gl::Texture bloom(gl::Texture tex) {
+		auto texForBlur = shade2(tex,
 			"vec3 c = fetch3();"
 			"vec3 w = vec3(.22, .71, .07);"
 			"float lum = dot(w, c);"
@@ -279,11 +305,13 @@ struct SApp : AppBasic {
 			"}"
 			"_out = c;");
 
-		auto tex2b = gpuBlur2_4::run_longtail(tex2ForBlur, 5, 1.0f);
+		auto texb = gpuBlur2_4::run_longtail(texForBlur, 5, 1.0f);
 
-		tex2 = shade2(tex2, tex2b,
+		auto texBloom = shade2(tex, texb,
 			"_out = fetch3(tex) + fetch3(tex2) * .2;"
 			);
+
+		return texBloom;
 	}
 };
 
