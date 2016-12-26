@@ -120,6 +120,7 @@ struct SApp : AppBasic {
 			velocity=gauss3(velocity);
 			img=gauss3(img);
 		}
+		// iterate main logic without blur (and w/o convection?) for stronger effect with less velocity. So it's smoother.
 		for(int i = 0; i < 3; i++) {
 			Array2D<Vec2f> gradients(sx, sy);
 			forxy(gradients)
@@ -167,6 +168,20 @@ struct SApp : AppBasic {
 		forxy(arr2) arr2(p)=arr2(p)*.3f/avg;
 		return arr2;
 	}
+
+	static Array2D<float> contrastize(Array2D<float> img)
+	{
+		auto result = img.clone();
+		forxy(img) {
+			float& here = result(p);
+			here -= .5;
+			here *= 20.0;
+			here += .5;
+			//here = max(0.0f, here);
+		}
+		return result;
+	}
+
 	void draw()
 	{
 		mouseX = getMousePos().x / (float)wsx;
@@ -174,6 +189,8 @@ struct SApp : AppBasic {
 
 		gl::clear(Color(0, 0, 0));
 		updateApp();
+
+		auto contrastized = contrastize(img);
 
 		/*auto imgt=maketex(img,GL_R16F);
 		auto velt=maketex(velocity,GL_RG16F);
@@ -200,7 +217,7 @@ struct SApp : AppBasic {
 
 		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
 
-		auto tex = maketex(img,GL_R16F);
+		auto tex = maketex(contrastized,GL_R16F);
 		auto grads = get_gradients_tex(tex);
 		auto tex2 = shade2(tex, grads, envMap,
 			"vec2 grad = fetch2(tex2);"

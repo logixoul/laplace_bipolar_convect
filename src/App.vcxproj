@@ -193,6 +193,7 @@
     <None Include="div.glsl" />
     <None Include="gradients.glsl" />
     <None Include="forward_convect.glsl" />
+    <None Include="NOTES.txt" />
     <None Include="sh1_main2.glsl" />
     <None Include="sh2.glsl" />
     <None Include="accumulate.glsl" />
