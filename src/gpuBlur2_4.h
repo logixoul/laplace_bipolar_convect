@@ -10,6 +10,7 @@ extern bool keys[];
 namespace gpuBlur2_4 {
 
 	inline gl::Texture singleblur(gl::Texture src, float hscale, float vscale);
+	inline gl::Texture upscale(gl::Texture src, ci::Vec2i toSize);
 	inline gl::Texture upscale(gl::Texture src, float hscale, float vscale);
 
 	inline gl::Texture run(gl::Texture src, int lvls) {
@@ -18,7 +19,7 @@ namespace gpuBlur2_4 {
 		for(int i = 0; i < lvls; i++) {
 			state = singleblur(state, .5, .5);
 		}
-		state = upscale(state, src.getWidth() / (float)state.getWidth(), src.getHeight() / (float)state.getHeight());
+		state = upscale(state, src.getSize());
 		return state;
 	}
 	inline gl::Texture run_longtail(gl::Texture src, int lvls, float lvlmul) {
@@ -47,6 +48,9 @@ namespace gpuBlur2_4 {
 	float gauss(float f, float width) {
 			float nfactor = 1.0 / (width * sqrt(twoPi));
 			return nfactor * exp(-f*f/(width*width));
+	}
+	inline gl::Texture upscale(gl::Texture src, ci::Vec2i toSize) {
+		return upscale(src, float(toSize.x) / src.getWidth(), float(toSize.y) / src.getHeight());
 	}
 	inline gl::Texture upscale(gl::Texture src, float hscale, float vscale) {
 		globaldict["gaussW"]=getGaussW();

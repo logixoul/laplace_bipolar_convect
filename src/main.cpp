@@ -96,7 +96,7 @@ struct SApp : AppBasic {
 			aaPoint(img2, Vec2f(p) + offset, img(p));
 			aaPoint(vel2, Vec2f(p) + offset, velocity(p));
 		}
-		cout<<"maxoffset"<<maxOffset<<endl;
+		//cout<<"maxoffset"<<maxOffset<<endl;
 		velocity = vel2;
 		img = img2;
 
@@ -187,29 +187,6 @@ struct SApp : AppBasic {
 
 		auto contrastized = contrastize(img);
 
-		/*auto imgt=maketex(img,GL_R16F);
-		auto velt=maketex(velocity,GL_RG16F);
-		globaldict["abc3"]=niceExpRangeX(mouseX,1.0,1000000.0);
-		auto imgBigt=shade(list_of(imgt), "void shade(){_out=fetch3();}");
-		int scalelog=2;
-		int times=2*scalelog;globaldict["times"]=times;
-
-		auto merged=shade(list_of(imgBigt)(velt),
-			"void shade() { _out.x=fetch1(tex);_out.yz=fetch2(tex2); }", ShadeOpts().ifmt(GL_RGB16F));
-		vector<gl::Texture> mergeds;
-		cout<<"=="<<endl;
-		for(int i=0;i<times;i++){
-			auto sh=getShader("forward_convect.glsl");
-			float fscale=(int(fmod(i,times/float(scalelog)))==0)?2.0f:1.0f;
-			merged=shade(list_of(merged), "void shade() {_out=fetch3();}", fscale); // UPSCALE "merged"
-			auto logVelt=shade(list_of(merged), "void shade() { vec2 v = fetch3(tex).yz; float len=length(v);"
-				"if(len==0.0) { _out.xy=vec2(0.0); return; } else { _out.xy=normalize(v)*log(len+1.0); }"
-				"}", ShadeOpts().ifmt(GL_RG16F));
-			if(times-i<=3)mergeds.push_back(merged);
-			merged=shade(list_of(merged)(logVelt), sh.c_str());
-		}
-		auto tex=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
-
 		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
 		static auto colorSource = gl::Texture(ci::loadImage("color.png"));
 
@@ -237,7 +214,7 @@ struct SApp : AppBasic {
 			//"if(fetch1(tex) <= surfTensionThres)"
 			//"	c = vec3(0.0);"
 			"_out = c;",
-			ShadeOpts().ifmt(GL_RGB16F).scale(4.0f),
+			ShadeOpts().ifmt(GL_RGB16F).scale(::scale / 2.0f), // NOTE I'm dividing by 2!
 			"float PI = 3.14159265358979323846264;\n"
 			"float getFresnel(vec3 I, vec3 N) {"
 			"	float R0 = 0.01;" // maybe is ok. but wikipedia has a way for calculating it.
@@ -268,8 +245,8 @@ struct SApp : AppBasic {
 			"	return c;"
 			"}\n"
 			);
+		// the bloom is the slow part
 		tex2=bloom(tex2);
-		tex2 = gammaCorrect(tex2);
 
 		tex2 = shade2(tex2, colorSource,
 			"vec3 c = fetch3();"
@@ -287,6 +264,8 @@ struct SApp : AppBasic {
 			ShadeOpts(),
 			getShader("hcl_lib.fs")
 			+ "vec3 w = vec3(.22, .71, .07);");
+
+		tex2 = gammaCorrect(tex2);
 		gl::draw(tex2, getWindowBounds());
 	}
 

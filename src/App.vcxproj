@@ -65,7 +65,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>D:\stuff\Dev\misc\cinder_lite\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\stuff\Dev\misc\cinder\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -80,8 +80,8 @@
       <AdditionalIncludeDirectories>..\D:\stuff\Dev\misc\cinder\include;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>libfftw3f-3.lib;cinder_lite.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\stuff\Dev\misc\cinder_lite\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libfftw3f-3.lib;cinder_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\stuff\Dev\misc\cinder\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -195,6 +195,7 @@
     <None Include="forward_convect.glsl" />
     <None Include="hcl_lib.fs" />
     <None Include="NOTES.txt" />
+    <None Include="OldCode.txt" />
     <None Include="sh1_main2.glsl" />
     <None Include="sh2.glsl" />
     <None Include="accumulate.glsl" />
