@@ -12,52 +12,36 @@ namespace gpuBlur2_4 {
 	inline gl::Texture singleblur(gl::Texture src, float hscale, float vscale);
 	inline gl::Texture upscale(gl::Texture src, float hscale, float vscale);
 
-	inline gl::Texture run(gl::Texture src, int lvls, int postBlurs) {
+	inline gl::Texture run(gl::Texture src, int lvls) {
 		auto state = Shade().tex(src).expr("fetch3()").run();
 	
 		for(int i = 0; i < lvls; i++) {
 			state = singleblur(state, .5, .5);
-		}
-		for(int i = 0; i < postBlurs; i++)
-		{
-			state = singleblur(state, 1.0f, 1.0f);
 		}
 		state = upscale(state, src.getWidth() / (float)state.getWidth(), src.getHeight() / (float)state.getHeight());
 		return state;
 	}
 	inline gl::Texture run_longtail(gl::Texture src, int lvls, float lvlmul) {
 		auto zoomstate = Shade().tex(src).expr("fetch3()").run();
-		//auto accstate = maketex(src.getWidth(), src.getHeight(), GL_RGBA16F);
 		auto accstate = Shade().tex(src).expr("vec3(0.0)").run();
 		
 		for(int i = 0; i < lvls; i++) {
 			zoomstate = singleblur(zoomstate, .5, .5);
 			if(zoomstate.getWidth() < 1 || zoomstate.getHeight() < 1) throw runtime_error("too many blur levels");
+			auto upscaled = upscale(zoomstate, src.getWidth() / (float)zoomstate.getWidth(), src.getHeight() / (float)zoomstate.getHeight());
 			globaldict["_mul"] = pow(lvlmul, float(i));
-			accstate = shade2(accstate, zoomstate,
+			accstate = shade2(accstate, upscaled,
 				"vec3 acc = fetch3(tex);"
 				"vec3 nextzoom = fetch3(tex2);"
 				"vec3 c = acc + nextzoom * _mul;"
 				"_out = c;"
 				);
 		}
-		//zoomstate = upscale(zoomstate, src.getWidth() / (float)zoomstate.getWidth(), src.getHeight() / (float)zoomstate.getHeight());
-		return accstate;
-	}
-	inline gl::Texture run_longtail_dbg(gl::Texture src, int lvls, float lvlmul) {
-		auto zoomstate = Shade().tex(src).expr("fetch3()").run();
-		//auto accstate = maketex(src.getWidth(), src.getHeight(), GL_RGBA16F);
-		auto accstate = Shade().tex(src).expr("vec3(0.0)").run();
-		accstate = shade2(accstate, zoomstate,
-			"vec3 acc = fetch3(tex);"
-			"vec3 nextzoom = fetch3(tex2);"
-			"vec3 c = acc + nextzoom;"
-			"_out = c;"
-			);
 		return accstate;
 	}
 	float getGaussW() {
-		return cfg1::getOpt("gaussW",2.0f, [&]() { return keys['/']; },
+		// default value determined by trial and error
+		return cfg1::getOpt("gaussW",0.75f, [&]() { return keys['/']; },
 			[&]() { return exp(mouseY*10.0f); });
 	}
 	float gauss(float f, float width) {
@@ -112,34 +96,24 @@ namespace gpuBlur2_4 {
 		float w0=gauss(0.0, gaussW);
 		float w1=gauss(1.0, gaussW);
 		float w2=gauss(2.0, gaussW);
-		//float w3=gauss(3.0, gaussW);
 		float sum=/*2.0f*w3+*/2.0f*w2+2.0f*w1+w0;
-		//w3/=sum;
 		w2/=sum;
 		w1/=sum;
 		w0/=sum;
 		stringstream weights;
 		weights << fixed << "float w0="<<w0 << ", w1=" << w1 << ", w2=" << w2 << /*",w3=" << w3 <<*/ ";"<<endl;
-		//system("pause");
-		cout<<"weights: "<<weights.str()<<endl;
-
+		
 		string shader =
 			"void shade() {"
 			"	vec2 offset = vec2(GB2_offsetX, GB2_offsetY);"
-			//"	vec3 aM3 = fetch3(tex, tc + (-3.0) * offset * tsize);"
 			"	vec3 aM2 = fetch3(tex, tc + (-2.0) * offset * tsize);"
 			"	vec3 aM1 = fetch3(tex, tc + (-1.0) * offset * tsize);"
 			"	vec3 a0 = fetch3(tex, tc + (0.0) * offset * tsize);"
 			"	vec3 aP1 = fetch3(tex, tc + (+1.0) * offset * tsize);"
 			"	vec3 aP2 = fetch3(tex, tc + (+2.0) * offset * tsize);"
-			//"	vec3 aP3 = fetch3(tex, tc + (+3.0) * offset * tsize);"
 			""
-			//"	float w2=0.0294118, w1=0.235294, w0=0.470588;"
-			//"float w0=0.164872, w1=0.151377, w2=0.117165,w3=0.0764467;"
 			+ weights.str() +
-			//"	_out = .05 * (a0 + a4) + .2 * (a1 + a3) + .5 * a2;"
 			"	_out = w2 * (aM2 + aP2) + w1 * (aM1 + aP1) + w0 * a0;"
-			//"	_out += w3 * (aM3 + aP3);"
 			"}";
 
 		globaldict["GB2_offsetX"] = 1.0;
