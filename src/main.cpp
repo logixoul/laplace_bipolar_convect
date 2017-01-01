@@ -7,9 +7,11 @@
 #include "shade.h"
 #include "gpgpu.h"
 #include "gpuBlur2_4.h"
+#include "hdrwrite.h"
 
 typedef gl::Texture Tex;
 typedef Array2D<float> Image;
+gl::Texture toSave;
 int wsx=800, wsy = 600;
 int scale = 4;
 int sx = wsx / scale;
@@ -50,6 +52,9 @@ struct SApp : AppBasic {
 				velocity(p) += desiredAvg - avg;
 			}
 		}
+		if(e.getChar() == 's') {
+			saveHdrScreenshot();
+		}
 		keys[e.getChar()] = true;
 	}
 	void keyUp(KeyEvent e)
@@ -79,7 +84,13 @@ struct SApp : AppBasic {
 		}
 		return blurredWeak;
 	}
-
+	void saveHdrScreenshot()
+	{
+		Array2D<Vec3f> readback(::toSave.getSize());
+		::toSave.bind();
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, readback.data);
+		writeRgbeFile("output.hdr", readback.Size(), (float*)readback.data);
+	}
 	void updateApp()
 	{
 		if(pause)
@@ -247,6 +258,7 @@ struct SApp : AppBasic {
 			);
 		// the bloom is the slow part
 		tex2=bloom(tex2);
+		::toSave = tex2;
 
 		tex2 = shade2(tex2, colorSource,
 			"vec3 c = fetch3();"

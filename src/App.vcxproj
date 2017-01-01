@@ -165,6 +165,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cfg1.cpp" />
+    <ClCompile Include="hdrwrite.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="main2.cpp" />
     <ClCompile Include="precompiled.cpp">
@@ -184,6 +185,7 @@
     <ClInclude Include="define_winmain.h" />
     <ClInclude Include="gpgpu.h" />
     <ClInclude Include="gpuBlur2_4.h" />
+    <ClInclude Include="hdrwrite.h" />
     <ClInclude Include="precompiled.h" />
     <ClInclude Include="shade.h" />
     <ClInclude Include="stuff.h" />
