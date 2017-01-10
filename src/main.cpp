@@ -267,6 +267,7 @@ struct SApp : AppBasic {
 			"c *= 1.5;"*/
 			"c = min(c, vec3(1.0));"
 			"vec3 colorSrc = fetch3(tex2);"
+			"colorSrc = pow(colorSrc, vec3(2.2));"
 			"vec3 cHCL = RGB2HCL(c);"
 			"vec3 colorSrcHCL = RGB2HCL(colorSrc);"
 			"cHCL.x = colorSrcHCL.x;"
@@ -287,19 +288,27 @@ struct SApp : AppBasic {
 	}
 
 	gl::Texture bloom(gl::Texture tex) {
-		auto texForBlur = shade2(tex,
+		static auto diffuseBg = gl::Texture(ci::loadImage("wall.png"));
+
+		/*auto texForBlur = shade2(tex,
 			"vec3 c = fetch3();"
 			"vec3 w = vec3(.22, .71, .07);"
 			"float lum = dot(w, c);"
 			"if(lum < 1.0) {"
 			"	c = vec3(0.0);"
 			"}"
-			"_out = c;");
+			"_out = c;");*/
+		auto& texForBlur = tex;
 
-		auto texb = gpuBlur2_4::run_longtail(texForBlur, 5, 1.0f);
+		auto texb = gpuBlur2_4::run_longtail(texForBlur, 6, 1.0f);
 
-		auto texBloom = shade2(tex, texb,
-			"_out = fetch3(tex) + fetch3(tex2) * .2;"
+		auto texBloom = shade2(tex, texb, diffuseBg,
+			"vec3 cmain = fetch3(tex);"
+			"vec3 blurred = fetch3(tex2);"
+			"vec3 diffuseBg = fetch3(tex3);"
+			"diffuseBg = pow(diffuseBg, vec3(2.2));"
+			"diffuseBg *= 2.0;"
+			"_out = cmain + diffuseBg * blurred * .2;"
 			);
 
 		return texBloom;
