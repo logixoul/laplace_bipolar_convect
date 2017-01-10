@@ -188,6 +188,32 @@ struct SApp : AppBasic {
 		return result;
 	}
 
+	/*static void adapt(Array2D<float>& contrastized) {
+		float logsum = 0.0f;
+		forxy(contrastized) {
+			float& val = contrastized(p);
+			logsum += log(max(.001f, val));
+		}
+		float logavg = logsum / contrastized.area;
+		float avg = exp(logavg);
+		forxy(contrastized) {
+			float& val = contrastized(p);
+			val *= .5 / avg;
+		}
+	}*/
+
+	static void adapt(Array2D<float>& img) {
+		float maxval = *max_element(img.begin(), img.end());
+		float desiredMaxVal = 3.0f;
+		float ratio = desiredMaxVal / maxval;
+		if(ratio > 1.0f) {
+			forxy(img) {
+				if(img(p) > 0.0f)
+					img(p) *= ratio;
+			}
+		}
+	}
+
 	void draw()
 	{
 		mouseX = getMousePos().x / (float)wsx;
@@ -198,6 +224,8 @@ struct SApp : AppBasic {
 
 		auto contrastized = contrastize(img);
 
+		adapt(contrastized);
+		
 		static auto envMap = gl::Texture(ci::loadImage("envmap4.png"));
 		static auto colorSource = gl::Texture(ci::loadImage("color.png"));
 
@@ -278,17 +306,33 @@ struct SApp : AppBasic {
 			getShader("hcl_lib.fs")
 			+ "vec3 w = vec3(.22, .71, .07);");
 
-		tex2 = gammaCorrect(tex2);
+		tex2 = toGammaSpace(tex2);
 		gl::draw(tex2, getWindowBounds());
 	}
 
-	gl::Texture gammaCorrect(gl::Texture& tex) {
+	gl::Texture toLinearSpace(gl::Texture& tex) {
+		auto texG = shade2(tex, "vec3 c = fetch3(); c = max(c, vec3(0.0)); c = pow(c, vec3(2.2)); _out = c;");
+		return texG;
+	}
+
+	gl::Texture toGammaSpace(gl::Texture& tex) {
 		auto texG = shade2(tex, "vec3 c = fetch3(); c = max(c, vec3(0.0)); c = pow(c, vec3(1.0/2.2)); _out = c;");
 		return texG;
 	}
 
+	gl::Texture createDiffuseBg() {
+		auto diffuseBg = gl::Texture(ci::loadImage("wall.png"));
+		diffuseBg = toLinearSpace(diffuseBg);
+		diffuseBg = shade2(diffuseBg,
+			"vec3 diffuseBg = fetch3(tex);"
+			"diffuseBg *= 2.0;"
+			"_out = diffuseBg;"
+			);
+		return diffuseBg;
+	}
+
 	gl::Texture bloom(gl::Texture tex) {
-		static auto diffuseBg = gl::Texture(ci::loadImage("wall.png"));
+		static auto diffuseBg = createDiffuseBg();
 
 		/*auto texForBlur = shade2(tex,
 			"vec3 c = fetch3();"
@@ -306,8 +350,6 @@ struct SApp : AppBasic {
 			"vec3 cmain = fetch3(tex);"
 			"vec3 blurred = fetch3(tex2);"
 			"vec3 diffuseBg = fetch3(tex3);"
-			"diffuseBg = pow(diffuseBg, vec3(2.2));"
-			"diffuseBg *= 2.0;"
 			"_out = cmain + diffuseBg * blurred * .2;"
 			);
 
