@@ -345,7 +345,9 @@
     <None Include="div.glsl" />
     <None Include="gradients.glsl" />
     <None Include="forward_convect.glsl" />
-    <None Include="hcl_lib.fs" />
+    <None Include="hcl_lib.fs">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
     <None Include="NOTES.txt" />
     <None Include="OldCode.txt" />
     <None Include="sh1_main2.glsl" />

@@ -69,7 +69,7 @@ struct SApp : AppBasic {
 		vectorField.setWrap(GL_REPEAT, GL_REPEAT);
 		src.setWrap(GL_REPEAT, GL_REPEAT);
 		dst.setWrap(GL_REPEAT, GL_REPEAT);
-		dst = shade(list_of(src)(vectorField), getShader("sh1_main2.glsl").c_str());
+		dst = shade(list_of(src)(vectorField), FileCache::get("sh1_main2.glsl").c_str());
 	}
 	void updateApp2()
 	{
@@ -102,9 +102,9 @@ struct SApp : AppBasic {
 		img=gauss3(img);
 		*/
 		globaldict["abc2"]=1.0f;//sign(mouseY) * expRange(abs(mouseY), .1f, 40000.0f);
-		auto gradients=shade(list_of(img), getShader("gradients.glsl").c_str());
-		auto div=shade(list_of(gradients), getShader("div.glsl").c_str());
-		velocity=shade(list_of(velocity)(gradients)(div), getShader("sh2.glsl").c_str());
+		auto gradients=shade(list_of(img), FileCache::get("gradients.glsl").c_str());
+		auto div=shade(list_of(gradients), FileCache::get("div.glsl").c_str());
+		velocity=shade(list_of(velocity)(gradients)(div), FileCache::get("sh2.glsl").c_str());
 	}
 #if 0
 	void updateApp()

@@ -303,7 +303,7 @@ struct SApp : AppBasic {
 			"_out = c;"
 			,
 			ShadeOpts(),
-			getShader("hcl_lib.fs")
+			FileCache::get("hcl_lib.fs")
 			+ "vec3 w = vec3(.22, .71, .07);");
 
 		tex2 = toGammaSpace(tex2);

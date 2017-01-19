@@ -787,19 +787,9 @@ inline Array2D<float> div(Array2D<Vec2f> a) {
 	});
 }
 
-class ShaderDb {
+class FileCache {
 public:
-	std::map<string,string> db;
+	static string get(string filename);
+private:
+	static std::map<string,string> db;
 };
-extern ShaderDb shaderDb;
-inline string getShader(string filename) {
-	//void loadFile(std::vector<unsigned char>& buffer, const std::string& filename);
-	auto& db=shaderDb.db;
-	if(db.find(filename)==db.end()) {
-		std::vector<unsigned char> buffer;
-		loadFile(buffer,filename);
-		string bufferStr(&buffer[0],&buffer[buffer.size()]);
-		db[filename]=bufferStr;
-	}
-	return db[filename];
-}
