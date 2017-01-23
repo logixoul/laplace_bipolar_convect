@@ -1,0 +1,23 @@
+// right after calling updateApp()
+		/*auto imgt=maketex(img,GL_R16F);
+		auto velt=maketex(velocity,GL_RG16F);
+		globaldict["abc3"]=niceExpRangeX(mouseX,1.0,1000000.0);
+		auto imgBigt=shade(list_of(imgt), "void shade(){_out=fetch3();}");
+		int scalelog=2;
+		int times=2*scalelog;globaldict["times"]=times;
+
+		auto merged=shade(list_of(imgBigt)(velt),
+			"void shade() { _out.x=fetch1(tex);_out.yz=fetch2(tex2); }", ShadeOpts().ifmt(GL_RGB16F));
+		vector<gl::Texture> mergeds;
+		cout<<"=="<<endl;
+		for(int i=0;i<times;i++){
+			auto sh=FileCache::get("forward_convect.glsl");
+			float fscale=(int(fmod(i,times/float(scalelog)))==0)?2.0f:1.0f;
+			merged=shade(list_of(merged), "void shade() {_out=fetch3();}", fscale); // UPSCALE "merged"
+			auto logVelt=shade(list_of(merged), "void shade() { vec2 v = fetch3(tex).yz; float len=length(v);"
+				"if(len==0.0) { _out.xy=vec2(0.0); return; } else { _out.xy=normalize(v)*log(len+1.0); }"
+				"}", ShadeOpts().ifmt(GL_RG16F));
+			if(times-i<=3)mergeds.push_back(merged);
+			merged=shade(list_of(merged)(logVelt), sh.c_str());
+		}
+		auto tex=shade(list_of(mergeds[mergeds.size()-1]),"void shade(){_out=vec3(fetch1());}");*/
