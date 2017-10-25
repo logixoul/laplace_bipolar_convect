@@ -1,5 +1,4 @@
 #include "precompiled.h"
-#if 1
 //#include "ciextra.h"
 #include "util.h"
 #include <numeric>
@@ -358,4 +357,3 @@ struct SApp : AppBasic {
 };
 
 #include "define_winmain.h"
-#endif
