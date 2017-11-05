@@ -311,7 +311,6 @@
     <ClCompile Include="cfg1.cpp" />
     <ClCompile Include="hdrwrite.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="main2.cpp" />
     <ClCompile Include="precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
